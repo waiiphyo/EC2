@@ -1,9 +1,25 @@
 resource "aws_vpc" "instance_vpc" {
   cidr_block = var.vpc_cidr_block
+  tags = {
+    Name = var.vpc_name
+  }
+}
+
+resource "aws_subnet" "instance_subnet" {
+  vpc_id = aws_vpc.instance_vpc.id
+  cidr_block = var.subnet_cidr_block
+  availability_zone = var.subnet_availability_zone
+  map_public_ip_on_launch = var.subnet_map_public_ip_on_launch
+  tags = {
+    Name = var.subnet_name
+  }
 }
 
 resource "aws_security_group" "instance_security_group" {
   vpc_id = aws_vpc.instance_vpc.id
+  tags = {
+    Name = var.sg_name
+  }
 
   ingress {
     from_port   = var.security_group_ingress_port
@@ -23,6 +39,7 @@ resource "aws_security_group" "instance_security_group" {
 resource "aws_instance" "instance1" {
   ami           = var.instance_ami
   instance_type = var.instance_type
+  subnet_id = aws_subnet.instance_subnet.id
   vpc_security_group_ids = [aws_security_group.instance_security_group.id]
 
   tags = {
@@ -30,11 +47,16 @@ resource "aws_instance" "instance1" {
   }
 }
 
-resource "aws_eip" "instance_public_ip" {
-  instance = aws_instance.instance1.id
-  vpc      = true
+output "subnet_id" {
+  value = aws_subnet.instance_subnet.id
 }
 
-output "public_ip" {
-  value = aws_eip.instance_public_ip.public_ip
+output "aws_vpc_id" {
+  value = aws_vpc.instance_vpc.id
+  
+}
+
+output "sg_id" {
+  value = aws_security_group.instance_security_group.id
+  
 }
